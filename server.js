@@ -4,14 +4,70 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = 3000;
+
+// セッション管理
+const sessions = new Map();
+
+// ユーザーデータ
+const users = {
+    'admin': {
+        password: 'AiComp@2025!Admin',
+        role: 'admin',
+        name: '管理者'
+    },
+    'staff': {
+        password: 'AiComp@2025!Staff',
+        role: 'staff',
+        name: 'スタッフ'
+    }
+};
 
 // ミドルウェア
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
+// 認証チェックミドルウェア
+function requireAuth(req, res, next) {
+    const sessionId = req.headers['x-session-id'];
+    
+    if (!sessionId || !sessions.has(sessionId)) {
+        return res.status(401).json({ error: '認証が必要です' });
+    }
+    
+    req.user = sessions.get(sessionId);
+    next();
+}
+
+// 管理者権限チェック
+function requireAdmin(req, res, next) {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: '管理者権限が必要です' });
+    }
+    next();
+}
+
+// ログインページ以外は認証必須
+app.use((req, res, next) => {
+    if (req.path === '/login.html' || req.path.startsWith('/api/auth/')) {
+        next();
+    } else if (req.path === '/' || req.path === '/index.html') {
+        // index.htmlアクセス時は認証チェック
+        const sessionId = req.headers['x-session-id'] || req.query.session;
+        if (!sessionId || !sessions.has(sessionId)) {
+            res.redirect('/login.html');
+        } else {
+            next();
+        }
+    } else {
+        next();
+    }
+});
+
 app.use(express.static('public'));
 
 // データファイルのパス
@@ -28,6 +84,58 @@ if (!fs.existsSync(dbDir)) {
 if (!fs.existsSync(HISTORY_FILE)) {
     fs.writeFileSync(HISTORY_FILE, JSON.stringify({ history: [] }, null, 2));
 }
+
+// ======= 認証API =======
+
+// ログイン
+app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    const user = users[username];
+    if (!user || user.password !== password) {
+        return res.json({ success: false, message: 'ユーザーIDまたはパスワードが違います' });
+    }
+    
+    // セッションID生成
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    sessions.set(sessionId, {
+        username,
+        role: user.role,
+        name: user.name,
+        loginTime: new Date()
+    });
+    
+    res.json({
+        success: true,
+        sessionId,
+        role: user.role,
+        userName: user.name
+    });
+});
+
+// ログアウト
+app.post('/api/auth/logout', (req, res) => {
+    const sessionId = req.headers['x-session-id'];
+    if (sessionId) {
+        sessions.delete(sessionId);
+    }
+    res.json({ success: true });
+});
+
+// セッション確認
+app.get('/api/auth/check', (req, res) => {
+    const sessionId = req.headers['x-session-id'];
+    if (!sessionId || !sessions.has(sessionId)) {
+        return res.json({ authenticated: false });
+    }
+    
+    const user = sessions.get(sessionId);
+    res.json({
+        authenticated: true,
+        role: user.role,
+        name: user.name
+    });
+});
 
 // 初期データの作成
 if (!fs.existsSync(DATA_FILE)) {
@@ -165,8 +273,8 @@ function saveHistory(data) {
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(data, null, 2));
 }
 
-// API: 契約追加
-app.post('/api/contracts', (req, res) => {
+// API: 契約追加（認証必須）
+app.post('/api/contracts', requireAuth, (req, res) => {
     const data = readData();
     const newContract = req.body;
     
@@ -186,8 +294,8 @@ app.post('/api/contracts', (req, res) => {
     res.json(newContract);
 });
 
-// API: 契約更新
-app.put('/api/contracts/:id', (req, res) => {
+// API: 契約更新（認証必須）
+app.put('/api/contracts/:id', requireAuth, (req, res) => {
     const data = readData();
     const contractId = req.params.id;
     const updatedContract = req.body;
@@ -202,8 +310,8 @@ app.put('/api/contracts/:id', (req, res) => {
     }
 });
 
-// API: 契約削除
-app.delete('/api/contracts/:id', (req, res) => {
+// API: 契約削除（管理者のみ）
+app.delete('/api/contracts/:id', requireAuth, requireAdmin, (req, res) => {
     const data = readData();
     const contractId = req.params.id;
     
@@ -239,8 +347,8 @@ app.post('/api/contracts/import-payment-status', (req, res) => {
     }
 });
 
-// API: 統計情報取得
-app.get('/api/stats', (req, res) => {
+// API: 統計情報取得（管理者のみ）
+app.get('/api/stats', requireAuth, requireAdmin, (req, res) => {
     const data = readData();
     const contracts = data.contracts;
     
