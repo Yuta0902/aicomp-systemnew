@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI COMP 契約管理システム</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+    }
+
+    /* ログイン画面 */
+    #loginScreen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .loginBox {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      width: 400px;
+    }
+
+    .loginBox h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .loginBox p {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .inputGroup {
+      margin-bottom: 20px;
+    }
+
+    .inputGroup label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .inputGroup input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .loginBtn {
+      width: 100%;
+      padding: 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .loginBtn:hover {
+      background: #5568d3;
+    }
+
+    /* メインレイアウト */
+    #mainScreen {
+      display: none;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* 左サイドバー */
+    .sidebar {
+      width: 250px;
+      background: white;
+      border-right: 1px solid #e0e0e0;
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      padding: 0 20px 15px;
+      font-size: 14px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 10px;
+    }
+
+    .phaseItem {
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 3px solid transparent;
+    }
+
+    .phaseItem:hover {
+      background: #f8f9fa;
+    }
+
+    .phaseItem.active {
+      background: #eef2ff;
+      border-left-color: #667eea;
+    }
+
+    .phaseItem.active .phaseLabel {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .phaseLabel {
+      font-size: 14px;
+      color: #333;
+    }
+
+    .phaseCount {
+      background: #f0f0f0;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .phaseItem.active .phaseCount {
+      background: #667eea;
+      color: white;
+    }
+
+    .logoutBtn {
+      margin: 20px;
+      width: calc(100% - 40px);
+      padding: 10px;
+      background: #f0f0f0;
+      color: #666;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .logoutBtn:hover {
+      background: #e0e0e0;
+    }
+
+    /* メインコンテンツ */
+    .mainContent {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .header {
+      background: white;
+      padding: 20px 30px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #2c3e50;
+    }
+
+    .headerRight {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .userInfo {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .newBtn {
+      padding: 10px 20px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .newBtn:hover {
+      background: #5568d3;
+    }
+
+    /* ダッシュボード統計 */
+    .dashboard {
+      padding: 30px;
+    }
+
+    .statsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .statCard {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .statLabel {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+
+    .statValue {
+      font-size: 32px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    /* 契約テーブル */
+    .tableContainer {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+
+    .tableHeader {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tableHeader h2 {
+      font-size: 18px;
+      color: #2c3e50;
+    }
+
+    .searchBox {
+      padding: 8px 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 250px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #f8f9fa;
+    }
+
+    th {
+      padding: 15px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 15px;
+      border-top: 1px solid #f0f0f0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+      cursor: pointer;
+    }
+
+    .statusBadge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-preconfirm { background: #fee; color: #c33; }
+    .status-postconfirm { background: #ffeaa7; color: #d63031; }
+    .status-entry { background: #e3f2fd; color: #1976d2; }
+    .status-handling { background: #e8f5e9; color: #388e3c; }
+    .status-completed { background: #f5f5f5; color: #666; }
+
+    /* モーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .modalContent {
+      background: white;
+      margin: 50px auto;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 800px;
+      position: relative;
+    }
+
+    .closeBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 28px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .closeBtn:hover {
+      color: #333;
+    }
+
+    .modalHeader {
+      margin-bottom: 30px;
+    }
+
+    .modalHeader h2 {
+      font-size: 24px;
+      color: #2c3e50;
+    }
+
+    .formGroup {
+      margin-bottom: 20px;
+    }
+
+    .formGroup label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .formGroup input,
+    .formGroup select,
+    .formGroup textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .formGroup textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .formRow {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .btnGroup {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .btnPrimary,
+    .btnSecondary {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btnPrimary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btnPrimary:hover {
+      background: #5568d3;
+    }
+
+    .btnSecondary {
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    .btnSecondary:hover {
+      background: #e0e0e0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tabContent {
+      display: none;
+    }
+
+    .tabContent.active {
+      display: block;
+    }
+
+    .historyList {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .historyItem {
+      background: #f8f9fa;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border-left: 3px solid #667eea;
+    }
+
+    .historyTime {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+
+    .historyAction {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .historyMemo {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .historyOperator {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .emptyState {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .emptyState h3 {
+      margin-bottom: 10px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- ログイン画面 -->
+  <div id="loginScreen">
+    <div class="loginBox">
+      <h1>AI COMP</h1>
+      <p>契約管理システム</p>
+      <div class="inputGroup">
+        <label>ユーザーID</label>
+        <input type="text" id="loginUsername" placeholder="admin">
+      </div>
+      <div class="inputGroup">
+        <label>パスワード</label>
+        <input type="password" id="loginPassword" placeholder="パスワードを入力">
+      </div>
+      <button class="loginBtn" onclick="login()">ログイン</button>
+    </div>
+  </div>
+
+  <!-- メイン画面 -->
+  <div id="mainScreen">
+    <div class="container">
+      <!-- 左サイドバー -->
+      <div class="sidebar">
+        <h3>フェーズ</h3>
+        <div class="phaseItem active" data-phase="all" onclick="filterByPhase('all')">
+          <div class="phaseLabel">すべて</div>
+          <span class="phaseCount" id="countAll">0</span>
+        </div>
+        <div class="phaseItem" data-phase="preconfirm" onclick="filterByPhase('preconfirm')">
+          <div class="phaseLabel">前確</div>
+          <span class="phaseCount" id="countPreconfirm">0</span>
+        </div>
+        <div class="phaseItem" data-phase="postconfirm" onclick="filterByPhase('postconfirm')">
+          <div class="phaseLabel">後確</div>
+          <span class="phaseCount" id="countPostconfirm">0</span>
+        </div>
+        <div class="phaseItem" data-phase="entry" onclick="filterByPhase('entry')">
+          <div class="phaseLabel">エントリ</div>
+          <span class="phaseCount" id="countEntry">0</span>
+        </div>
+        <div class="phaseItem" data-phase="handling" onclick="filterByPhase('handling')">
+          <div class="phaseLabel">対応</div>
+          <span class="phaseCount" id="countHandling">0</span>
+        </div>
+        <button class="logoutBtn" onclick="logout()">ログアウト</button>
+      </div>
+
+      <!-- メインコンテンツ -->
+      <div class="mainContent">
+        <!-- ヘッダー -->
+        <div class="header">
+          <h1 id="pageTitle">契約管理ダッシュボード</h1>
+          <div class="headerRight">
+            <div class="userInfo">
+              <span id="userNameDisplay">ユーザー</span>
+              <span id="userRoleDisplay"></span>
+            </div>
+            <button class="newBtn" onclick="openNewModal()">新規登録</button>
+          </div>
+        </div>
+
+        <!-- ダッシュボード -->
+        <div class="dashboard">
+          <!-- 統計カード -->
+          <div class="statsGrid">
+            <div class="statCard">
+              <div class="statLabel">前確</div>
+              <div class="statValue" id="statPreconfirm">0</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">後確</div>
+              <div class="statValue" id="statPostconfirm">0</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">エントリ</div>
+              <div class="statValue" id="statEntry">0</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">対応</div>
+              <div class="statValue" id="statHandling">0</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">合計</div>
+              <div class="statValue" id="statTotal">0</div>
+            </div>
+          </div>
+
+          <!-- 契約テーブル -->
+          <div class="tableContainer">
+            <div class="tableHeader">
+              <h2>契約一覧</h2>
+              <input type="text" class="searchBox" placeholder="検索..." id="searchInput" onkeyup="filterContracts()">
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>契約ID</th>
+                  <th>顧客名</th>
+                  <th>取次店</th>
+                  <th>電話番号</th>
+                  <th>フェーズ</th>
+                  <th>ステータス</th>
+                  <th>登録日</th>
+                </tr>
+              </thead>
+              <tbody id="contractTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新規登録モーダル -->
+  <div id="newModal" class="modal">
+    <div class="modalContent">
+      <span class="closeBtn" onclick="closeNewModal()">&times;</span>
+      <div class="modalHeader">
+        <h2>新規契約登録</h2>
+      </div>
+      <div class="formRow">
+        <div class="formGroup">
+          <label>取次店コード *</label>
+          <input type="text" id="newAgencyCode" placeholder="例: AIC00001">
+        </div>
+        <div class="formGroup">
+          <label>取次店名 *</label>
+          <input type="text" id="newAgencyName" placeholder="例: A代理店">
+        </div>
+      </div>
+      <div class="formRow">
+        <div class="formGroup">
+          <label>顧客名 *</label>
+          <input type="text" id="newCustomerName" placeholder="例: 山田太郎">
+        </div>
+        <div class="formGroup">
+          <label>電話番号 *</label>
+          <input type="text" id="newPhone" placeholder="例: 090-1234-5678">
+        </div>
+      </div>
+      <div class="formGroup">
+        <label>住所</label>
+        <input type="text" id="newAddress" placeholder="例: 東京都渋谷区...">
+      </div>
+      <div class="formGroup">
+        <label>メモ</label>
+        <textarea id="newMemo" placeholder="特記事項があれば記入"></textarea>
+      </div>
+      <div class="btnGroup">
+        <button class="btnSecondary" onclick="closeNewModal()">キャンセル</button>
+        <button class="btnPrimary" onclick="createContract()">登録</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詳細モーダル -->
+  <div id="detailModal" class="modal">
+    <div class="modalContent">
+      <span class="closeBtn" onclick="closeDetailModal()">&times;</span>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('info')">契約情報</button>
+        <button class="tab" onclick="switchTab('status')">ステータス更新</button>
+        <button class="tab" onclick="switchTab('history')">対応履歴</button>
+      </div>
+
+      <!-- 契約情報タブ -->
+      <div id="tabInfo" class="tabContent active">
+        <div class="formRow">
+          <div class="formGroup">
+            <label>契約ID</label>
+            <input type="text" id="detailId" readonly>
+          </div>
+          <div class="formGroup">
+            <label>取次店コード</label>
+            <input type="text" id="detailAgencyCode" readonly>
+          </div>
+        </div>
+        <div class="formRow">
+          <div class="formGroup">
+            <label>取次店名</label>
+            <input type="text" id="detailAgencyName" readonly>
+          </div>
+          <div class="formGroup">
+            <label>顧客名</label>
+            <input type="text" id="detailCustomerName" readonly>
+          </div>
+        </div>
+        <div class="formRow">
+          <div class="formGroup">
+            <label>電話番号</label>
+            <input type="text" id="detailPhone" readonly>
+          </div>
+          <div class="formGroup">
+            <label>現在のステータス</label>
+            <input type="text" id="detailStatus" readonly>
+          </div>
+        </div>
+        <div class="formGroup">
+          <label>住所</label>
+          <input type="text" id="detailAddress" readonly>
+        </div>
+      </div>
+
+      <!-- ステータス更新タブ -->
+      <div id="tabStatus" class="tabContent">
+        <div class="formGroup">
+          <label>現在のフェーズ</label>
+          <input type="text" id="currentPhase" readonly>
+        </div>
+        <div class="formGroup">
+          <label>新しいステータス *</label>
+          <select id="newStatus">
+            <option value="">選択してください</option>
+          </select>
+        </div>
+        <div class="formGroup">
+          <label>メモ</label>
+          <textarea id="statusMemo" placeholder="対応内容を入力"></textarea>
+        </div>
+        <div class="formGroup">
+          <label>担当者</label>
+          <input type="text" id="statusOperator" value="">
+        </div>
+        <div class="btnGroup">
+          <button class="btnSecondary" onclick="closeDetailModal()">キャンセル</button>
+          <button class="btnPrimary" onclick="updateStatus()">更新</button>
+        </div>
+      </div>
+
+      <!-- 対応履歴タブ -->
+      <div id="tabHistory" class="tabContent">
+        <div id="historyList" class="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let currentContract = null;
+    let currentPhaseFilter = 'all';
+    let allContracts = [];
+
+    // ログイン
+    async function login() {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          currentUser = data.user;
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('mainScreen').style.display = 'block';
+          document.getElementById('userNameDisplay').textContent = data.user.name;
+          document.getElementById('userRoleDisplay').textContent = 
+            data.user.role === 'admin' ? '(管理者)' : 
+            data.user.role === 'staff' ? '(スタッフ)' : '(代理店)';
+          loadContracts();
+          updateStats();
+        } else {
+          alert('ログインに失敗しました');
+        }
+      } catch (error) {
+        alert('エラーが発生しました');
+      }
+    }
+
+    // ログアウト
+    function logout() {
+      currentUser = null;
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('mainScreen').style.display = 'none';
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    // 契約一覧読み込み
+    async function loadContracts() {
+      try {
+        let url = '/api/contracts';
+        const params = new URLSearchParams();
+        
+        if (currentUser.agencyCode) {
+          params.append('agencyCode', currentUser.agencyCode);
+        }
+        
+        if (currentPhaseFilter !== 'all') {
+          params.append('phase', currentPhaseFilter);
+        }
+
+        if (params.toString()) {
+          url += '?' + params.toString();
+        }
+
+        const response = await fetch(url);
+        allContracts = await response.json();
+        displayContracts(allContracts);
+      } catch (error) {
+        console.error('契約読み込みエラー:', error);
+      }
+    }
+
+    // 契約表示
+    function displayContracts(contracts) {
+      const tbody = document.getElementById('contractTableBody');
+      
+      if (contracts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center;padding:40px;color:#999;">
+              契約データがありません
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const phaseNames = {
+        entry: 'エントリ',
+        preconfirm: '前確',
+        handling: '対応',
+        postconfirm: '後確',
+        completed: '完了'
+      };
+
+      tbody.innerHTML = contracts.map(contract => `
+        <tr onclick="openDetailModal('${contract.id}')">
+          <td>${contract.id}</td>
+          <td>${contract.customerName}</td>
+          <td>${contract.agencyName}</td>
+          <td>${contract.phone}</td>
+          <td>${phaseNames[contract.phase] || contract.phase}</td>
+          <td><span class="statusBadge status-${contract.phase}">${contract.status}</span></td>
+          <td>${new Date(contract.createdAt).toLocaleDateString('ja-JP')}</td>
+        </tr>
+      `).join('');
+    }
+
+    // 統計更新
+    async function updateStats() {
+      try {
+        let url = '/api/contracts/stats/by-phase';
+        if (currentUser.agencyCode) {
+          url += '?agencyCode=' + currentUser.agencyCode;
+        }
+
+        const response = await fetch(url);
+        const stats = await response.json();
+
+        // サイドバーの件数
+        document.getElementById('countAll').textContent = stats.total;
+        document.getElementById('countEntry').textContent = stats.entry;
+        document.getElementById('countPreconfirm').textContent = stats.preconfirm;
+        document.getElementById('countHandling').textContent = stats.handling;
+        document.getElementById('countPostconfirm').textContent = stats.postconfirm;
+
+        // ダッシュボードの統計
+        document.getElementById('statPreconfirm').textContent = stats.preconfirm;
+        document.getElementById('statPostconfirm').textContent = stats.postconfirm;
+        document.getElementById('statEntry').textContent = stats.entry;
+        document.getElementById('statHandling').textContent = stats.handling;
+        document.getElementById('statTotal').textContent = stats.total;
+      } catch (error) {
+        console.error('統計更新エラー:', error);
+      }
+    }
+
+    // フェーズでフィルタ
+    function filterByPhase(phase) {
+      currentPhaseFilter = phase;
+      
+      // サイドバーのアクティブ状態更新
+      document.querySelectorAll('.phaseItem').forEach(item => {
+        item.classList.remove('active');
+      });
+      document.querySelector(`[data-phase="${phase}"]`).classList.add('active');
+
+      // タイトル更新
+      const titles = {
+        all: '契約管理ダッシュボード',
+        entry: 'エントリ',
+        preconfirm: '前確',
+        handling: '対応',
+        postconfirm: '後確'
+      };
+      document.getElementById('pageTitle').textContent = titles[phase];
+
+      loadContracts();
+    }
+
+    // 検索フィルタ
+    function filterContracts() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      
+      if (searchTerm === '') {
+        displayContracts(allContracts);
+        return;
+      }
+
+      const filtered = allContracts.filter(contract => {
+        return contract.customerName.toLowerCase().includes(searchTerm) ||
+               contract.agencyName.toLowerCase().includes(searchTerm) ||
+               contract.phone.includes(searchTerm) ||
+               contract.id.toLowerCase().includes(searchTerm);
+      });
+
+      displayContracts(filtered);
+    }
+
+    // 新規登録モーダル
+    function openNewModal() {
+      if (currentUser.agencyCode) {
+        document.getElementById('newAgencyCode').value = currentUser.agencyCode;
+        document.getElementById('newAgencyCode').readOnly = true;
+        document.getElementById('newAgencyName').value = currentUser.name;
+      }
+      document.getElementById('newModal').style.display = 'block';
+    }
+
+    function closeNewModal() {
+      document.getElementById('newModal').style.display = 'none';
+      document.getElementById('newAgencyCode').value = '';
+      document.getElementById('newAgencyName').value = '';
+      document.getElementById('newCustomerName').value = '';
+      document.getElementById('newPhone').value = '';
+      document.getElementById('newAddress').value = '';
+      document.getElementById('newMemo').value = '';
+    }
+
+    // 契約作成
+    async function createContract() {
+      const agencyCode = document.getElementById('newAgencyCode').value;
+      const agencyName = document.getElementById('newAgencyName').value;
+      const customerName = document.getElementById('newCustomerName').value;
+      const phone = document.getElementById('newPhone').value;
+      const address = document.getElementById('newAddress').value;
+      const memo = document.getElementById('newMemo').value;
+
+      if (!agencyCode || !agencyName || !customerName || !phone) {
+        alert('必須項目を入力してください');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agencyCode,
+            agencyName,
+            customerName,
+            phone,
+            address,
+            memo,
+            operator: currentUser.name
+          })
+        });
+
+        if (response.ok) {
+          alert('登録しました');
+          closeNewModal();
+          loadContracts();
+          updateStats();
+        } else {
+          alert('登録に失敗しました');
+        }
+      } catch (error) {
+        alert('エラーが発生しました');
+      }
+    }
+
+    // 詳細モーダル
+    async function openDetailModal(contractId) {
+      try {
+        const response = await fetch(`/api/contracts/${contractId}`);
+        currentContract = await response.json();
+
+        // 契約情報タブ
+        document.getElementById('detailId').value = currentContract.id;
+        document.getElementById('detailAgencyCode').value = currentContract.agencyCode;
+        document.getElementById('detailAgencyName').value = currentContract.agencyName;
+        document.getElementById('detailCustomerName').value = currentContract.customerName;
+        document.getElementById('detailPhone').value = currentContract.phone;
+        document.getElementById('detailAddress').value = currentContract.address || '';
+        document.getElementById('detailStatus').value = currentContract.status;
+
+        // ステータス更新タブ
+        const phaseNames = {
+          entry: 'エントリ',
+          preconfirm: '前確',
+          handling: '対応',
+          postconfirm: '後確'
+        };
+        document.getElementById('currentPhase').value = phaseNames[currentContract.phase] || currentContract.phase;
+        document.getElementById('statusOperator').value = currentUser.name;
+        updateStatusOptions(currentContract.phase);
+
+        // 履歴タブ
+        displayHistory(currentContract.history || []);
+
+        document.getElementById('detailModal').style.display = 'block';
+        switchTab('info');
+      } catch (error) {
+        console.error('詳細取得エラー:', error);
+        alert('契約情報の取得に失敗しました');
+      }
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').style.display = 'none';
+      currentContract = null;
+    }
+
+    // タブ切り替え
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tabContent').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+    }
+
+    // ステータス選択肢更新
+    function updateStatusOptions(phase) {
+      const select = document.getElementById('newStatus');
+      const options = {
+        entry: [
+          'エントリ待ち',
+          'エントリ完了',
+          'エントリNG'
+        ],
+        preconfirm: [
+          '前確待ち',
+          '前確OK',
+          '前確再コール',
+          '前確NG'
+        ],
+        handling: [
+          '対応待ち',
+          '対応完了',
+          '対応中',
+          '対応保留'
+        ],
+        postconfirm: [
+          '後確待ち',
+          '後確OK',
+          '後確再コール',
+          '後確NG'
+        ]
+      };
+
+      select.innerHTML = '<option value="">選択してください</option>' +
+        (options[phase] || []).map(opt => `<option value="${opt}">${opt}</option>`).join('');
+    }
+
+    // ステータス更新
+    async function updateStatus() {
+      const status = document.getElementById('newStatus').value;
+      const memo = document.getElementById('statusMemo').value;
+      const operator = document.getElementById('statusOperator').value;
+
+      if (!status) {
+        alert('ステータスを選択してください');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/contracts/${currentContract.id}/update-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status,
+            memo,
+            operator
+          })
+        });
+
+        if (response.ok) {
+          alert('更新しました');
+          closeDetailModal();
+          loadContracts();
+          updateStats();
+        } else {
+          alert('更新に失敗しました');
+        }
+      } catch (error) {
+        alert('エラーが発生しました');
+      }
+    }
+
+    // 履歴表示
+    function displayHistory(history) {
+      const historyDiv = document.getElementById('historyList');
+      
+      if (history.length === 0) {
+        historyDiv.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">履歴がありません</p>';
+        return;
+      }
+
+      historyDiv.innerHTML = history.slice().reverse().map(item => `
+        <div class="historyItem">
+          <div class="historyTime">${new Date(item.timestamp).toLocaleString('ja-JP')}</div>
+          <div class="historyAction">${item.action}</div>
+          ${item.memo ? `<div class="historyMemo">${item.memo}</div>` : ''}
+          <div class="historyOperator">担当: ${item.operator}</div>
+        </div>
+      `).join('');
+    }
+
+    // モーダル外クリックで閉じる
+    window.onclick = function(event) {
+      if (event.target.className === 'modal') {
+        event.target.style.display = 'none';
+      }
+    }
+
+    // 定期更新（30秒ごと）
+    setInterval(() => {
+      if (currentUser) {
+        updateStats();
+      }
+    }, 30000);
+  </script>
+</body>
+</html>
